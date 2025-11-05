@@ -174,7 +174,6 @@ function draw()
 	{
 		drawClose();
 	}
-
 }
 
 function reactiontrigger()
@@ -196,7 +195,7 @@ function reactiontrigger()
 		setTimeout(() => {
 			reactions[RandReact].show();
 			reactions[RandReact].play();
-		}, 500);
+		}, 600);
 
 
 	//for ease of programming make all images short video clips in premiere
