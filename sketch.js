@@ -1,384 +1,346 @@
-sketch.js
-// ==============================================
-// BODYPOSE - BODY TRACKING AS UI INTERACTION
-// ==============================================
-// This example shows how to use body tracking as a new way to interact
-// with objects on screen. Move your nose to control the red dot!
-//
-// INTERACTION CONCEPT:
-// Traditional UI: Touch/click to select objects
-// Body Tracking UI: Move your body to hover/select objects
-//
-// Uses PhoneCamera class from p5-phone for automatic coordinate mapping.
-// Works with any ML5 model (FaceMesh, HandPose, BodyPose, etc.)
-// ==============================================
+laptopx = 100;
+laptopy = 300;
+laptopheight =500;
+laptopwidth =800;
+videox = 180;
+videoy = 150;
+videoheight =320;
+videowidth =500;
+let reactions;
+let IdleAnim;
+let OpenAnim;
+let CloseAnim;
+State = "idle"; //set to idle
+reset = false;
+firstuse = true;
+rand = 0;
+whentriggered = false;
 
-// ==============================================
-// ADJUSTABLE PARAMETERS
-// ==============================================
-let SHOW_VIDEO = true;              // Show/hide video feed (toggle with touch)
-let SHOW_ALL_KEYPOINTS = true;      // Show all 33 body keypoints (set to false to hide)
-
-// Customize which body point to track:
-// 0 = nose (default)
-// 11 = left shoulder
-// 12 = right shoulder
-// 13 = left elbow
-// 14 = right elbow
-// 15 = left wrist
-// 16 = right wrist
-// 23 = left hip
-// 24 = right hip
-// 25 = left knee
-// 26 = right knee
-// 27 = left ankle
-// 28 = right ankle
-let TRACKED_KEYPOINT_INDEX = 0;     // Which body point to use for interaction
-
-let CURSOR_SIZE = 30;               // Size of the tracking cursor (body dot)
-let CURSOR_COLOR = [255, 50, 50];   // Color of cursor (red)
-let KEYPOINT_SIZE = 5;              // Size of all body keypoints (if shown)
-
-// ==============================================
-// GLOBAL VARIABLES
-// ==============================================
-let cam;                            // PhoneCamera instance
-let bodypose;                       // ML5 BodyPose model
-let poses = [];                     // Detected bodies (updated automatically)
-let cursor;                         // Tracked keypoint position (mapped to screen coordinates)
-
+let myRec;
+let resultText = "";
+let isFinal = event.results[current].isFinal;
 
 function preload()
 {
-	cinema = loadImage("absolute crushed.jpg");
+
+	jumpfoxy = createVideo("Reactions/jumpfoxy.mp4"); //foxy jumpscare
+	iam = createVideo("Reactions/iam.mp4"); //title card
+	apr = createVideo("Reactions/averagepressurerun.mov"); //pressure
+	ays = createVideo("Reactions/ays.mp4"); //are you sure?
+	bm = createVideo("Reactions/bm.mp4"); //best mates
+	doom = createVideo("Reactions/doom.mp4"); //doom
+	mcw = createVideo("Reactions/mc world.mp4"); //mc world
+	misinput = createVideo("Reactions/misinput.mp4"); //misinput
+	znoise = createVideo("Reactions/znoises.mp4"); //zombie noises
+	whistle = createVideo("Reactions/whistle.mp4"); //whistle
+	windows8 = createVideo("Reactions/windows8.mp4"); //windows 8 home
+	bluenew = createVideo("Reactions/bluenew.mp4"); //bluescreen windows 10
+	blueold = createVideo("Reactions/blueold.mp4"); //bluescreen old
+	loading = createVideo("Reactions/loading.mp4"); //windows ten update
+	longhorn = createVideo("Reactions/longhorn.mp4"); //longhorn
+	when = createVideo("Reactions/when.mp4"); //when
+	absolute = createVideo("Reactions/absolute.mp4"); //absolute
+
+	frameref = createImage('frames/f1.PNG');
+
+	IdleAnim = loadAnimation(
+		'frames/f1.PNG',
+		'frames/f2.PNG',
+		'frames/f3.PNG',
+
+	);
+
+	OpenAnim = loadAnimation(
+		'frames/f1.PNG',
+		'frames/f2.PNG',
+		'frames/f3.PNG',
+		'frames/f4.PNG',
+		'frames/f5.PNG',
+		'frames/f6.PNG',
+		'frames/f7.PNG',
+		'frames/f8.PNG',
+		'frames/f9.PNG',
+		'frames/f10.PNG'
+	);
+
+	CloseAnim = loadAnimation(
+		'frames/f10.PNG',
+		'frames/f9.PNG',
+		'frames/f8.PNG',
+		'frames/f7.PNG',
+		'frames/f6.PNG',
+		'frames/f5.PNG',
+		'frames/f4.PNG',
+		'frames/f3.PNG',
+		'frames/f2.PNG',
+		'frames/f1.PNG'
+	);
+
 }
-// ==============================================
-// SETUP - Runs once when page loads
-// ==============================================
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  lockGestures();  // Prevent phone gestures (zoom, refresh)
-  
-  // Create camera: front camera, mirrored, fit to canvas height
-  cam = createPhoneCamera('environment', true, 'fitHeight');
-  
-  // Enable camera (handles initialization automatically)
-  enableCameraTap();
-  
-  // Start ML5 when camera is ready
-  cam.onReady(() => {
-    // Configure ML5 BodyPose with BlazePose for 3D coordinates
-    let options = {
-      runtime: 'mediapipe',               // Use MediaPipe runtime (same as HandPose)
-      modelType: 'MULTIPOSE_LIGHTNING',  // Fast model for phone
-      enableSmoothing: true,              // Smooth tracking
-      minPoseScore: 0.25,                 // Minimum confidence threshold
-      multiPoseMaxDimension: 256,         // Resolution (lower = faster)
-      enableTracking: true,               // Track across frames
-      trackerType: 'boundingBox',         // Tracking method
-      trackerConfig: {},
-      modelUrl: undefined,
-      flipped: false                      // Don't flip in ML5 - cam.mapKeypoint() handles mirroring
-    };
-    
-    // Create BodyPose model with ready callback
-    bodypose = ml5.bodyPose('BlazePose', options, modelLoaded);
-  });
-}
-
-function modelLoaded() {
-  // Start detection when model is ready
-  bodypose.detectStart(cam.videoElement, (results) => {
-    poses = results;
-  });
-}
-
-// ==============================================
-// DRAW - Runs continuously (60 times per second)
-// ==============================================
-function draw() {
-  background(40);  // Dark gray background
-  
-  // Draw the camera feed (toggle with touch)
-  if (SHOW_VIDEO) {
-    image(cam, 0, 0);  // PhoneCamera handles positioning and mirroring!
-  }
-  
-  // Draw body tracking
-  if (poses.length > 0) {
-    drawAllPoses();
-    drawTrackedCursor();
-  }
-	if (poses.length > 0) {
-	// Use the first detected person
-	let pose = poses[0];
-
-	// Map all keypoints to screen coordinates
-	let allPoints = cam.mapKeypoints(pose.keypoints);
-
-	// Make sure the wrist points exist
-	if (allPoints[15] && allPoints[16]) {
-		let leftWrist = allPoints[15];
-		let rightWrist = allPoints[16];
-		
-		// Check if either wrist x position <= 400
-		if (leftWrist.y <= 500 && rightWrist.y <= 500) {
-			image(cinema, 0, 0,windowWidth,windowHeight);
-		}
-	}
-	}
-  // Draw instructions and status
-  drawUI();
-}
-
-// ==============================================
-// DRAW ALL POSES - Show keypoints for all detected bodies
-// ==============================================
-function drawAllPoses() {
-  // Draw each detected body
-  for (let i = 0; i < poses.length; i++) {
-    let pose = poses[i];
-    
-    if (!pose.keypoints || pose.keypoints.length === 0) continue;
-    
-    // Map all keypoints to screen coordinates
-    let allPoints = cam.mapKeypoints(pose.keypoints);
-    
-    // Body color (can differentiate multiple people)
-    let bodyColor = [0, 255, 150]; // Green
-    
-    // ==============================================
-    // DRAW BODY KEYPOINTS
-    // ==============================================
-    if (SHOW_ALL_KEYPOINTS) {
-      push();
-      for (let point of allPoints) {
-        // Only draw if confidence is high enough
-        let originalPoint = pose.keypoints[allPoints.indexOf(point)];
-        if (originalPoint && originalPoint.confidence > 0.3) {
-          fill(bodyColor[0], bodyColor[1], bodyColor[2], 150);
-          noStroke();
-          ellipse(point.x, point.y, KEYPOINT_SIZE, KEYPOINT_SIZE);
-        }
-      }
-      pop();
-      
-      // Draw body skeleton/connections
-      drawBodySkeleton(pose.keypoints, allPoints, bodyColor);
-    }
-  }
-}
-
-// ==============================================
-// DRAW TRACKED CURSOR - Show the specific tracked point
-// ==============================================
-function drawTrackedCursor() {
-  // Use first detected body
-  let pose = poses[0];
-  
-  if (!pose || !pose.keypoints) return;
-  
-  // ==============================================
-  // MAIN INTERACTION: Get tracked keypoint position
-  // ==============================================
-  // This is the body point you can use to control UI elements!
-  // Change TRACKED_KEYPOINT_INDEX at top of file to track different points
-  
-  let trackedKeypoint = pose.keypoints[TRACKED_KEYPOINT_INDEX];
-  if (!trackedKeypoint || trackedKeypoint.confidence < 0.3) return;
-  
-  // Map to screen coordinates - ONE LINE!
-  // cam.mapKeypoint() handles all scaling and mirroring automatically
-  cursor = cam.mapKeypoint(trackedKeypoint);
-  
-  // ==============================================
-  // USE THE CURSOR POSITION FOR INTERACTION
-  // ==============================================
-  // Now you have cursor.x, cursor.y, and cursor.z (3D!) to use however you want!
-  // Examples:
-  // - Move objects: object.x = cursor.x, object.y = cursor.y
-  // - Check collision: if (dist(cursor.x, cursor.y, target.x, target.y) < 50) {...}
-  // - Control parameters: brightness = map(cursor.y, 0, height, 0, 255)
-  // - Use depth: size = map(cursor.z, -100, 100, 10, 50)
-  
-  // Draw cursor at tracked position
-  push();
-  fill(CURSOR_COLOR[0], CURSOR_COLOR[1], CURSOR_COLOR[2]);
-  noStroke();
-  ellipse(cursor.x, cursor.y, CURSOR_SIZE, CURSOR_SIZE);
-  
-  // Optional: Show crosshair for precise positioning
-  stroke(CURSOR_COLOR[0], CURSOR_COLOR[1], CURSOR_COLOR[2], 150);
-  strokeWeight(2);
-  line(cursor.x - 15, cursor.y, cursor.x + 15, cursor.y);
-  line(cursor.x, cursor.y - 15, cursor.x, cursor.y + 15);
-  pop();
-  
-  // Optional: Display coordinates (useful for debugging)
-  push();
-  fill(255);
-  stroke(0);
-  strokeWeight(3);
-  textAlign(CENTER, TOP);
-  textSize(14);
-  text('x: ' + cursor.x.toFixed(0) + ', y: ' + cursor.y.toFixed(0) + 
-       ', z: ' + (cursor.z || 0).toFixed(2), 
-       cursor.x, cursor.y + CURSOR_SIZE/2 + 10);
-  pop();
-}
-
-// ==============================================
-// DRAW BODY SKELETON - Connect keypoints to show body structure
-// ==============================================
-function drawBodySkeleton(originalPoints, mappedPoints, color) {
-  // BlazePose connections (33 keypoints)
-  const connections = [
-    // Face
-    [0, 1], [1, 2], [2, 3], [3, 7],     // Nose to left
-    [0, 4], [4, 5], [5, 6], [6, 8],     // Nose to right
-    [9, 10],                             // Mouth
-    
-    // Torso
-    [11, 12],                            // Shoulders
-    [11, 23], [12, 24],                  // Shoulder to hip
-    [23, 24],                            // Hips
-    
-    // Left arm
-    [11, 13], [13, 15],                  // Shoulder to elbow to wrist
-    [15, 17], [15, 19], [15, 21],        // Wrist to hand
-    [17, 19],                            // Hand connections
-    
-    // Right arm  
-    [12, 14], [14, 16],                  // Shoulder to elbow to wrist
-    [16, 18], [16, 20], [16, 22],        // Wrist to hand
-    [18, 20],                            // Hand connections
-    
-    // Left leg
-    [23, 25], [25, 27],                  // Hip to knee to ankle
-    [27, 29], [27, 31],                  // Ankle to foot
-    [29, 31],                            // Foot connections
-    
-    // Right leg
-    [24, 26], [26, 28],                  // Hip to knee to ankle
-    [28, 30], [28, 32],                  // Ankle to foot
-    [30, 32]                             // Foot connections
-  ];
-  
-  push();
-  stroke(color[0], color[1], color[2], 150);
-  strokeWeight(2);
-  
-  for (let connection of connections) {
-    let [i, j] = connection;
-    // Only draw if both points have high confidence
-    if (originalPoints[i] && originalPoints[j] &&
-        originalPoints[i].confidence > 0.3 && 
-        originalPoints[j].confidence > 0.3 &&
-        mappedPoints[i] && mappedPoints[j]) {
-      line(mappedPoints[i].x, mappedPoints[i].y, 
-           mappedPoints[j].x, mappedPoints[j].y);
-    }
-  }
-  pop();
-  
-}
-
-// ==============================================
-// DRAW UI - Display status and instructions
-// ==============================================
-function drawUI() {
-  push();
-  fill(255);
-  noStroke();
-  textAlign(CENTER, TOP);
-  textSize(18);
-  
-  // Show status at top of screen
-  if (!cam.ready) {
-    text('Starting camera...', width/2, 20);
-  } else if (poses.length === 0) {
-    text('Show your body to start tracking', width/2, 20);
-  } else {
-    // Show which keypoint is being tracked
-    let keypointNames = {
-      0: 'Nose',
-      11: 'Left Shoulder',
-      12: 'Right Shoulder',
-      13: 'Left Elbow',
-      14: 'Right Elbow',
-      15: 'Left Wrist',
-      16: 'Right Wrist',
-      23: 'Left Hip',
-      24: 'Right Hip',
-      25: 'Left Knee',
-      26: 'Right Knee',
-      27: 'Left Ankle',
-      28: 'Right Ankle'
-    };
-    let name = keypointNames[TRACKED_KEYPOINT_INDEX] || 'Keypoint ' + TRACKED_KEYPOINT_INDEX;
-    text('Tracking: ' + name, width/2, 20);
-    
-    // Show detected poses count
-    textSize(14);
-    text('Bodies detected: ' + poses.length, width/2, 45);
-  }
-  
-  // Show instructions at bottom
-  textSize(14);
-  fill(200);
-  textAlign(CENTER, BOTTOM);
-  text('Touch screen to toggle video', width/2, height - 20);
-  
-  // Show settings status
-  textSize(12);
-  fill(SHOW_VIDEO ? [0, 255, 0] : [150, 150, 150]);
-  text('Video: ' + (SHOW_VIDEO ? 'ON' : 'OFF'), width/2, height - 40);
-  
-  fill(SHOW_ALL_KEYPOINTS ? [0, 255, 0] : [150, 150, 150]);
-  text('All Keypoints: ' + (SHOW_ALL_KEYPOINTS ? 'ON' : 'OFF'), width/2, height - 55);
-  
-  fill(255);
-  if (cam.ready) {
-    text('Camera: ' + cam.active + ' (mirrored: ' + cam.mirror + ')', width/2, height - 70);
-  }
-  
-  pop();
-}
-
-// ==============================================
-// TOUCH EVENTS - Toggle video display
-// ==============================================
-function touchStarted() {
-  SHOW_VIDEO = !SHOW_VIDEO;
-  return false;  // Prevent default to avoid interfering with camera/ML5
-}
-
-// Also works with mouse click for testing on desktop
-function mousePressed() {
-  SHOW_VIDEO = !SHOW_VIDEO;
-  return false;
-}
-
-// ==============================================
-// KEY PRESS - Switch camera with spacebar
-// ==============================================
-function keyPressed() {
-  if (key === ' ' && cam.ready) {
-    // Switch between front and back camera
-    cam.active = cam.active === 'user' ? 'environment' : 'user';
-    
-    // Typically mirror front camera, not back camera
-    if (cam.active === 'environment') {
-      cam.mirror = false;
-    } else {
-      cam.mirror = true;
-    }
-  }
-}
-
-// ==============================================
-// WINDOW RESIZE - Update canvas when screen rotates
-// ==============================================
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
+
+function drawIdle() {
+	push();
+	translate(laptopx, laptopy);
+	scale(0.3); // 50% size
+	animation(IdleAnim, laptopwidth, laptopheight);
+	pop();
+}
+
+function drawOpen() {
+	push();
+
+	translate(laptopx, laptopy);
+	scale(0.3);
+	animation(OpenAnim, laptopwidth, laptopheight);
+	pop();
+	OpenAnim.noLoop();
+
+
+}
+
+function drawClose() {
+	push();
+	translate(laptopx, laptopy);
+	scale(0.3); // 50% size
+	animation(CloseAnim, laptopwidth, laptopheight);
+	pop();
+	CloseAnim.noLoop();
+}
+
+
+function setup() 
+{
+	createCanvas(windowWidth, windowHeight);
+
+		// Create speech recognizer
+	myRec = new p5.SpeechRec('en-US', gotSpeech);
+
+	// Start continuous listening
+	myRec.continuous = true; 
+	myRec.interimResults = false;
+	myRec.start();
+
+
+	IdleAnim.frameDelay = 15;
+	OpenAnim.frameDelay = 5;
+	CloseAnim.frameDelay = 5;
+
+
+	jumpfoxy.hide();
+	iam.hide();
+	apr.hide();
+	ays.hide();
+	bm.hide();
+	doom.hide();
+	mcw.hide();
+	misinput.hide();
+	znoise.hide();
+	whistle.hide();
+	bluenew.hide();
+	blueold.hide();
+	loading.hide();
+	longhorn.hide();
+	when.hide();
+	absolute.hide();
+	windows8.hide();
+
+	react = createButton("react");
+	react.position(100,100);
+	react.size(100,100);
+	react.mousePressed(() => {
+		RandReact = int(random(0, 17));
+		reactiontrigger();
+		});
+
+	reactions = [jumpfoxy, iam, apr, ays, bm, doom, mcw, misinput, znoise, whistle, windows8, bluenew, blueold, loading, longhorn, when];
+	RandReact = 0;
+
+}
+
+function gotSpeech() {
+	if (myRec.resultValue) {
+		resultText = myRec.resultString;
+		console.log("Heard:", resultText);
+	}
+}
+
+function draw()
+{
+	push();
+	background(225,125,235);
+	
+	
+	if (reactions[RandReact].elt.ended || firstuse) {
+		if (reset)
+		{
+			react.removeAttribute('disabled', ''); 
+			reactions[RandReact].hide();
+			State = "close"
+			CloseAnim.frame = 0;
+			CloseAnim.play();
+			reset = false;
+			myRec.start();
+		}
+		else if (!CloseAnim.playing)
+		{
+			State = "idle";
+		}
+
+		if (!whentriggered)
+		{
+		//absolute
+		if (resultText.toLowerCase().includes("absolute") || resultText.toLowerCase().includes("cinema"))
+		{
+			// RANDOM RandReact = int(random(0, 17));
+			RandReact = 0;
+			reactiontrigger()
+
+		}
+		//apr
+		else if (resultText.toLowerCase().includes("pressure") || resultText.toLowerCase().includes("sky"))
+		{
+			RandReact = 2;
+			reactiontrigger()
+		}
+		//ays
+		else if (resultText.toLowerCase().includes("are you sure") || resultText.toLowerCase().includes("sure"))
+		{
+			RandReact = 3;
+			reactiontrigger()
+		}
+		//bluenew / blueold / loading / longhorn / windows8
+		else if (resultText.toLowerCase().includes("error") || resultText.toLowerCase().includes("bluescreen") || resultText.toLowerCase().includes("windows") || resultText.toLowerCase().includes("process"))
+		{
+			rand = int(random(0, 5));
+			console.log(rand);
+			if (rand == 0)
+			{
+				RandReact = 11;
+			}
+			else if (rand == 1)
+			{
+				RandReact = 12;
+			}
+			else if (rand == 2)
+			{
+				RandReact = 13;
+			}
+			else if (rand == 3)
+			{
+				RandReact = 14;
+			}
+			else if (rand == 4)
+			{
+				RandReact = 11;
+			}
+		}
+		//bm
+		else if (resultText.toLowerCase().includes("fortnite") || resultText.toLowerCase().includes("fortnight") || resultText.toLowerCase().includes("fort night"))
+		{
+			RandReact = 4;
+			reactiontrigger()
+		}
+		//doom
+		else if (resultText.toLowerCase().includes("doom") || resultText.toLowerCase().includes("run"))
+		{
+			RandReact = 5;
+			reactiontrigger()
+		}
+		//iam
+		else if (resultText.toLowerCase().includes("i am") || resultText.toLowerCase().includes("i'm"))
+		{
+			console.log("ran")
+			RandReact = 1;
+			reactiontrigger()
+		}
+		//jumpfoxy / whistle
+		else if (resultText.toLowerCase().includes("jump scare") || resultText.toLowerCase().includes("freddy") || resultText.toLowerCase().includes("five bear") || resultText.toLowerCase().includes("five nights") || resultText.toLowerCase().includes("josh") || resultText.toLowerCase().includes("whistle"))
+		{
+			rand = int(random(0, 2));
+			console.log(rand);
+			if (rand == 0)
+			{
+				RandReact = 0;
+			}
+			else if (rand == 1)
+			{
+				RandReact = 9;
+			}
+			reactiontrigger()
+		}
+		//mc world
+		else if (resultText.toLowerCase().includes("create") || resultText.toLowerCase().includes("mine") || resultText.toLowerCase().includes("craft") || resultText.toLowerCase().includes("water bucket"))
+		{
+			RandReact = 6;
+			reactiontrigger()
+		}
+		//misinput
+		else if (resultText.toLowerCase().includes("misinput") || resultText.toLowerCase().includes("miss input") || resultText.toLowerCase().includes("calm"))
+		{
+			RandReact = 7;
+			reactiontrigger()
+		}
+		//when
+		else if (resultText.toLowerCase().includes("when") || resultText.toLowerCase().includes("programming") || resultText.toLowerCase().includes("code") || resultText.toLowerCase().includes("coding"))
+		{
+			RandReact = 15;
+			reactiontrigger()
+		}
+		//znoises
+		else if (resultText.toLowerCase().includes("sam") || resultText.toLowerCase().includes("zombies") || resultText.toLowerCase().includes("dogging"))
+		{
+			RandReact = 8;
+			reactiontrigger()
+		}
+	}
+
+
+
+	}
+
+	if (State == "idle")
+	{
+		drawIdle();
+	}
+	else if (State == "open")
+	{
+		drawOpen();
+	}
+	else if (State == "close")
+	{
+		drawClose();
+	}
+	pop();
+	
+
+}
+
+function reactiontrigger()
+{
+		State = "open"
+		myRec.stop();
+		resultText = "";
+		firstuse = false;
+		OpenAnim.frame = 0;
+		OpenAnim.play();
+	
+		reset = true;
+
+		react.attribute('disabled', '');
+		console.log("Reaction " + RandReact);
+
+		reactions[RandReact].position(videox,videoy);
+		reactions[RandReact].size(videoheight,videowidth);
+
+		reactions[RandReact].time(0);
+		setTimeout(() => {
+			reactions[RandReact].show();
+			reactions[RandReact].play();
+		}, 550);
+
+}
+
+
