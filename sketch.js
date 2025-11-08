@@ -141,7 +141,7 @@ function drawClose() {
 function setup() 
 {
 	//establish canvas
-	document.body.style.zoom = "135%";
+	document.body.style.zoom = "125%";
 	createCanvas(windowWidth, windowHeight);
 
 	// Create speech recognizer
