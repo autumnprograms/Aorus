@@ -1,28 +1,45 @@
+//laptop character dimensions and position
 laptopx = 100;
 laptopy = 300;
 laptopheight =500;
 laptopwidth =800;
+
+//video reactions dimensions and position
 videox = 180;
 videoy = 150;
 videoheight =320;
 videowidth =500;
+
+//button reactions dimensions and position
+buttonx = 100;
+buttony = 100;
+buttonheight =100;
+buttonwidth =100;
+
+//list for reactions 
 let reactions;
+
+//establishing animation names
 let IdleAnim;
 let OpenAnim;
 let CloseAnim;
-State = "idle"; //set to idle
-reset = false;
-firstuse = true;
-rand = 0;
-whentriggered = false;
 
-let myRec;
-let resultText = "";
-let isFinal = event.results[current].isFinal;
+//state for changing animation
+State = "idle";
+
+//general use variables 
+reset = false; //used as flag for if reset has taken place
+firstuse = true; //used to allow first use, avoids repeating reactions in loop
+RandReact = 0; //used in some reaction cases to choose a random reaction
+whentriggered = false; //flag that tracks if reaction is currently being played.
+
+//establishing needed vars for voice rec
+let myRec; //recognition var
+let resultText = ""; //results
 
 function preload()
 {
-
+	//creating video assets
 	jumpfoxy = createVideo("Reactions/jumpfoxy.mp4"); //foxy jumpscare
 	iam = createVideo("Reactions/iam.mp4"); //title card
 	apr = createVideo("Reactions/averagepressurerun.mov"); //pressure
@@ -41,8 +58,7 @@ function preload()
 	when = createVideo("Reactions/when.mp4"); //when
 	absolute = createVideo("Reactions/absolute.mp4"); //absolute
 
-	frameref = createImage('frames/f1.PNG');
-
+	//loads Idle Anim
 	IdleAnim = loadAnimation(
 		'frames/f1.PNG',
 		'frames/f2.PNG',
@@ -50,6 +66,7 @@ function preload()
 
 	);
 
+	//loads Open Anim
 	OpenAnim = loadAnimation(
 		'frames/f1.PNG',
 		'frames/f2.PNG',
@@ -63,6 +80,7 @@ function preload()
 		'frames/f10.PNG'
 	);
 
+	//loads Close Anim
 	CloseAnim = loadAnimation(
 		'frames/f10.PNG',
 		'frames/f9.PNG',
@@ -77,10 +95,13 @@ function preload()
 	);
 
 }
+
+//resizes dependent on window size
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
 
+//draws Idle Animation
 function drawIdle() {
 	push();
 	translate(laptopx, laptopy);
@@ -89,6 +110,7 @@ function drawIdle() {
 	pop();
 }
 
+//draws Open Animation
 function drawOpen() {
 	push();
 
@@ -101,6 +123,7 @@ function drawOpen() {
 
 }
 
+//draws Close Animation
 function drawClose() {
 	push();
 	translate(laptopx, laptopy);
@@ -113,53 +136,41 @@ function drawClose() {
 
 function setup() 
 {
+	//establish canvas
 	createCanvas(windowWidth, windowHeight);
 
-		// Create speech recognizer
+	// Create speech recognizer
 	myRec = new p5.SpeechRec('en-US', gotSpeech);
 
-	// Start continuous listening
+	// Starts continuous listening
 	myRec.continuous = true; 
-	myRec.interimResults = false;
-	myRec.start();
+	myRec.interimResults = false; //no final results, removes repeating issues
+	myRec.start(); //starts recording
 
-
+	//animation frame padding 
 	IdleAnim.frameDelay = 15;
 	OpenAnim.frameDelay = 5;
 	CloseAnim.frameDelay = 5;
 
-
-	jumpfoxy.hide();
-	iam.hide();
-	apr.hide();
-	ays.hide();
-	bm.hide();
-	doom.hide();
-	mcw.hide();
-	misinput.hide();
-	znoise.hide();
-	whistle.hide();
-	bluenew.hide();
-	blueold.hide();
-	loading.hide();
-	longhorn.hide();
-	when.hide();
-	absolute.hide();
-	windows8.hide();
-
+	//creates "random Reaction button"
 	react = createButton("react");
-	react.position(100,100);
-	react.size(100,100);
+	react.position(buttonx,buttony);
+	react.size(buttonwidth,buttonheight);
 	react.mousePressed(() => {
-		RandReact = int(random(0, 17));
+		RandReact = int(random(0, 18));
 		reactiontrigger();
-		});
+	});
 
-	reactions = [jumpfoxy, iam, apr, ays, bm, doom, mcw, misinput, znoise, whistle, windows8, bluenew, blueold, loading, longhorn, when];
-	RandReact = 0;
+	//creates list of videos
+	reactions = [jumpfoxy, iam, apr, ays, bm, doom, mcw, misinput, znoise, whistle, windows8, bluenew, blueold, loading, longhorn, when, absolute];
 
+	//goes through all videos, hides them for now
+	for (let i = 0; i < reactions.length; i++) {
+	reactions[i].hide();
+	}
 }
 
+//funct for speech recognition
 function gotSpeech() {
 	if (myRec.resultValue) {
 		resultText = myRec.resultString;
@@ -172,125 +183,128 @@ function draw()
 	push();
 	background(225,125,235);
 	
-	
+	//checks if current video is done playing
 	if (reactions[RandReact].elt.ended || firstuse) {
-		if (reset)
+		if (reset) //uses reset flag
 		{
-			react.removeAttribute('disabled', ''); 
-			reactions[RandReact].hide();
-			State = "close"
-			CloseAnim.frame = 0;
-			CloseAnim.play();
-			reset = false;
-			myRec.start();
+			react.removeAttribute('disabled', '');  //allows button use
+			reactions[RandReact].hide(); //rehides video
+			State = "close" //sets animation state
+			CloseAnim.frame = 0; //sets Animation Start frame
+			CloseAnim.play(); //unpauses anim (had issues before w/o this)
+			reset = false; //resets reset flag
+			myRec.start(); //starts checking for words again
 		}
-		else if (!CloseAnim.playing)
+		else if (!CloseAnim.playing) //sets back to idle after close
 		{
 			State = "idle";
 		}
 
-		if (!whentriggered)
+		if (!whentriggered) //only if reaction hasnt already been triggered.
 		{
+		
+		// runs through all of the possible words/trigger phrases for each reaction
+
+		resultText = resultText.toLowerCase();
 		//absolute
-		if (resultText.toLowerCase().includes("absolute") || resultText.toLowerCase().includes("cinema"))
+		if (resultText.includes("absolute") || resultText.includes("cinema"))
 		{
-			// RANDOM RandReact = int(random(0, 17));
 			RandReact = 0;
 			reactiontrigger()
 
 		}
 		//apr
-		else if (resultText.toLowerCase().includes("pressure") || resultText.toLowerCase().includes("sky"))
+		else if (resultText.includes("pressure") || resultText.includes("sky"))
 		{
 			RandReact = 2;
 			reactiontrigger()
 		}
 		//ays
-		else if (resultText.toLowerCase().includes("are you sure") || resultText.toLowerCase().includes("sure"))
+		else if (resultText.includes("are you sure") || resultText.includes("sure"))
 		{
 			RandReact = 3;
 			reactiontrigger()
 		}
 		//bluenew / blueold / loading / longhorn / windows8
-		else if (resultText.toLowerCase().includes("error") || resultText.toLowerCase().includes("bluescreen") || resultText.toLowerCase().includes("windows") || resultText.toLowerCase().includes("process"))
+		else if (resultText.includes("error") || resultText.includes("bluescreen") || resultText.includes("windows") || resultText.includes("process"))
 		{
-			rand = int(random(0, 5));
-			console.log(rand);
-			if (rand == 0)
+			RandReact = int(random(0, 5));
+			console.log(RandReact);
+			if (RandReact == 0)
 			{
 				RandReact = 11;
 			}
-			else if (rand == 1)
+			else if (RandReact == 1)
 			{
 				RandReact = 12;
 			}
-			else if (rand == 2)
+			else if (RandReact == 2)
 			{
 				RandReact = 13;
 			}
-			else if (rand == 3)
+			else if (RandReact == 3)
 			{
 				RandReact = 14;
 			}
-			else if (rand == 4)
+			else if (RandReact == 4)
 			{
 				RandReact = 11;
 			}
 		}
 		//bm
-		else if (resultText.toLowerCase().includes("fortnite") || resultText.toLowerCase().includes("fortnight") || resultText.toLowerCase().includes("fort night"))
+		else if (resultText.includes("fortnite") || resultText.includes("fortnight") || resultText.includes("fort night"))
 		{
 			RandReact = 4;
 			reactiontrigger()
 		}
 		//doom
-		else if (resultText.toLowerCase().includes("doom") || resultText.toLowerCase().includes("run"))
+		else if (resultText.includes("doom") || resultText.includes("run"))
 		{
 			RandReact = 5;
 			reactiontrigger()
 		}
 		//iam
-		else if (resultText.toLowerCase().includes("i am") || resultText.toLowerCase().includes("i'm"))
+		else if (resultText.includes("i am") || resultText.includes("i'm"))
 		{
 			console.log("ran")
 			RandReact = 1;
 			reactiontrigger()
 		}
 		//jumpfoxy / whistle
-		else if (resultText.toLowerCase().includes("jump scare") || resultText.toLowerCase().includes("freddy") || resultText.toLowerCase().includes("five bear") || resultText.toLowerCase().includes("five nights") || resultText.toLowerCase().includes("josh") || resultText.toLowerCase().includes("whistle"))
+		else if (resultText.includes("jump scare") || resultText.includes("freddy") || resultText.includes("five bear") || resultText.includes("five nights") || resultText.includes("josh") || resultText.includes("whistle"))
 		{
-			rand = int(random(0, 2));
-			console.log(rand);
-			if (rand == 0)
+			RandReact = int(random(0, 2));
+			console.log(RandReact);
+			if (RandReact == 0)
 			{
 				RandReact = 0;
 			}
-			else if (rand == 1)
+			else if (RandReact == 1)
 			{
 				RandReact = 9;
 			}
 			reactiontrigger()
 		}
 		//mc world
-		else if (resultText.toLowerCase().includes("create") || resultText.toLowerCase().includes("mine") || resultText.toLowerCase().includes("craft") || resultText.toLowerCase().includes("water bucket"))
+		else if (resultText.includes("create") || resultText.includes("mine") || resultText.includes("craft") || resultText.includes("water bucket"))
 		{
 			RandReact = 6;
 			reactiontrigger()
 		}
 		//misinput
-		else if (resultText.toLowerCase().includes("misinput") || resultText.toLowerCase().includes("miss input") || resultText.toLowerCase().includes("calm"))
+		else if (resultText.includes("misinput") || resultText.includes("miss input") || resultText.includes("calm"))
 		{
 			RandReact = 7;
 			reactiontrigger()
 		}
 		//when
-		else if (resultText.toLowerCase().includes("when") || resultText.toLowerCase().includes("programming") || resultText.toLowerCase().includes("code") || resultText.toLowerCase().includes("coding"))
+		else if (resultText.includes("when") || resultText.includes("programming") || resultText.includes("code") || resultText.includes("coding"))
 		{
 			RandReact = 15;
 			reactiontrigger()
 		}
 		//znoises
-		else if (resultText.toLowerCase().includes("sam") || resultText.toLowerCase().includes("zombies") || resultText.toLowerCase().includes("dogging"))
+		else if (resultText.includes("sam") || resultText.includes("zombies") || resultText.includes("dogging"))
 		{
 			RandReact = 8;
 			reactiontrigger()
@@ -326,7 +340,6 @@ function reactiontrigger()
 		firstuse = false;
 		OpenAnim.frame = 0;
 		OpenAnim.play();
-	
 		reset = true;
 
 		react.attribute('disabled', '');
@@ -339,7 +352,7 @@ function reactiontrigger()
 		setTimeout(() => {
 			reactions[RandReact].show();
 			reactions[RandReact].play();
-		}, 550);
+		}, 600);
 
 }
 
