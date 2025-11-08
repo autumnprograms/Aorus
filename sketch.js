@@ -12,9 +12,9 @@ videowidth =500;
 
 //button reactions dimensions and position
 buttonx = 100;
-buttony = 200;
-buttonheight =100;
-buttonwidth =100;
+buttony = 175;
+buttonheight =150;
+buttonwidth =150;
 
 //list for reactions 
 let reactions;
@@ -158,9 +158,17 @@ function setup()
 	CloseAnim.frameDelay = 5;
 
 	//creates "random Reaction button"
-	react = createButton("react");
+	react = createButton("?");
+	react.style('background-color', '#7b1f7bff'); // tomato color
+  	react.style('color', 'white');
+ 	 react.style('border', '4px solid #370f38ff');
+  	react.style('border-radius', '100px');
+  	react.style('font-size', '75px');
+	react.style('font-family', 'Arial Rounded MT Bold, Arial, sans-serif');
+ 	react.style('color', '#e18fe3ff');
 	react.position(buttonx,buttony);
 	react.size(buttonwidth,buttonheight);
+
 	react.mousePressed(() => {
 		RandReact = int(random(0, 18));
 		reactiontrigger();
