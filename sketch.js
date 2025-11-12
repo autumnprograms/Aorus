@@ -61,6 +61,7 @@ function preload()
 	longhorn = createVideo("Reactions/longhorn.mp4"); //longhorn
 	when = createVideo("Reactions/when.mp4"); //when
 	absolute = createVideo("Reactions/absolute.mp4"); //absolute
+	sta = createVideo("Reactions/sta.mp4"); //say that again
 
 	//loads Idle Anim
 	IdleAnim = loadAnimation(
@@ -117,7 +118,6 @@ function drawIdle() {
 //draws Open Animation
 function drawOpen() {
 	push();
-
 	translate(laptopx, laptopy);
 	scale(0.3);
 	animation(OpenAnim, laptopwidth, laptopheight);
@@ -141,7 +141,7 @@ function drawClose() {
 function setup() 
 {
 	//establish canvas
-	document.body.style.zoom = "125%";
+	document.body.style.zoom = "100%";
 	createCanvas(windowWidth, windowHeight);
 
 	// Create speech recognizer
@@ -170,12 +170,12 @@ function setup()
 	react.size(buttonwidth,buttonheight);
 
 	react.mousePressed(() => {
-		RandReact = int(random(0, 18));
+		RandReact = int(random(0, 19));
 		reactiontrigger();
 	});
 
 	//creates list of videos
-	reactions = [jumpfoxy, iam, apr, ays, bm, doom, mcw, misinput, znoise, whistle, windows8, bluenew, blueold, loading, longhorn, when, absolute];
+	reactions = [jumpfoxy, iam, apr, ays, bm, doom, mcw, misinput, znoise, whistle, windows8, bluenew, blueold, loading, longhorn, when, absolute,sta];
 
 	//goes through all videos, hides them for now
 	for (let i = 0; i < reactions.length; i++) {
@@ -193,8 +193,14 @@ function gotSpeech() {
 
 function draw()
 {
-	push();
+
 	background(225,125,235);
+
+	textSize(60);
+	fill('white');
+  	text('Aorus doesn\'t want to work.', 80, 100);
+  	text('Say memes he knows.', 140, 480);
+
 	
 	//checks if current video is done playing
 	if (reactions[RandReact].elt.ended || firstuse) {
@@ -222,7 +228,7 @@ function draw()
 		//absolute
 		if (resultText.includes("absolute") || resultText.includes("cinema"))
 		{
-			RandReact = 0;
+			RandReact = 16;
 			reactiontrigger()
 
 		}
@@ -322,6 +328,12 @@ function draw()
 			RandReact = 8;
 			reactiontrigger()
 		}
+		//say that again
+		else if (resultText.includes("fantastic") || resultText.includes("thing") || resultText.includes("four") || resultText.includes("say that again"))
+		{
+			RandReact =17;
+			reactiontrigger()
+		}
 		if (millis() - lastChangeTime > silenceDelay && resultText !== "") {
 		console.log("2 seconds of silence — resetting sentence");
 		RandReact = int(random(0, 18));
@@ -342,8 +354,6 @@ function draw()
 		{
 			drawClose();
 		}
-		pop();
-	
 
 }
 
