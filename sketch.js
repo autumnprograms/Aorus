@@ -180,6 +180,7 @@ function setup()
 	//goes through all videos, hides them for now
 	for (let i = 0; i < reactions.length; i++) {
 	reactions[i].hide();
+	enableMicTap('Tap to enable motion sensors');
 	}
 }
 
