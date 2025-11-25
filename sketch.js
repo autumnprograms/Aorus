@@ -1,3 +1,8 @@
+// ==============================================
+//                       POSITIONAL DATA
+// ==============================================
+
+
 //laptop character dimensions and position
 laptopx = 400;
 laptopy = 100;
@@ -15,11 +20,20 @@ buttonx = 100;
 buttony = 115;
 buttonx2 = 100;
 buttony2 = 275;
+buttonx3 = 250;
+buttony3 = 235;
 buttonheight =150;
 buttonwidth =150;
+buttonheight2 =75;
+buttonwidth2 =75;
 
+// ==============================================
+//                 ESTABLISHING VARS/ANIMS
+// ==============================================
 //list for reactions 
 let reactions;
+//list of found reactions
+let found;
 
 //establishing animation names
 let IdleAnim;
@@ -33,7 +47,7 @@ State = "idle";
 reset = false; //used as flag for if reset has taken place
 firstuse = true; //used to allow first use, avoids repeating reactions in loop
 RandReact = 0; //used in some reaction cases to choose a random reaction
-whentriggered = false; //flag that tracks if reaction is currently being played.
+hintscreen = false;
 
 //establishing needed vars for voice rec
 let myRec; //recognition var
@@ -43,6 +57,12 @@ let prevText = ""; //last known text
 let lastChangeTime = 0;
 let silenceDelay = 2000; // 2 seconds
 
+
+
+
+// ==============================================
+//          PRELOAD - GETTING VIDEOS AND ANIMS
+// ==============================================
 function preload()
 {
 	//creating video assets
@@ -103,43 +123,9 @@ function preload()
 
 }
 
-//resizes dependent on window size
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
-}
-
-//draws Idle Animation
-function drawIdle() {
-	push();
-	translate(laptopx, laptopy);
-	scale(0.3); // 50% size
-	animation(IdleAnim, laptopwidth, laptopheight);
-	pop();
-}
-
-//draws Open Animation
-function drawOpen() {
-	push();
-	translate(laptopx, laptopy);
-	scale(0.3);
-	animation(OpenAnim, laptopwidth, laptopheight);
-	pop();
-	OpenAnim.noLoop();
-
-
-}
-
-//draws Close Animation
-function drawClose() {
-	push();
-	translate(laptopx, laptopy);
-	scale(0.3); // 50% size
-	animation(CloseAnim, laptopwidth, laptopheight);
-	pop();
-	CloseAnim.noLoop();
-}
-
-
+// ==============================================
+//                              SETUP
+// ==============================================
 function setup() 
 {
 	//establish canvas
@@ -162,7 +148,7 @@ function setup()
 	react = createButton("?");
 	react.style('background-color', '#7b1f7bff'); // tomato color
   	react.style('color', 'white');
- 	 react.style('border', '4px solid #370f38ff');
+ 	react.style('border', '4px solid #370f38ff');
   	react.style('border-radius', '100px');
   	react.style('font-size', '75px');
 	react.style('font-family', 'Arial Rounded MT Bold, Arial, sans-serif');
@@ -175,10 +161,10 @@ function setup()
 		reactiontrigger();
 	});
 	
-		speak = createButton("!");
+	speak = createButton("🎤︎︎");
 	speak.style('background-color', '#7b1f7bff'); // tomato color
   	speak.style('color', 'white');
- 	 speak.style('border', '4px solid #370f38ff');
+ 	speak.style('border', '4px solid #370f38ff');
   	speak.style('border-radius', '100px');
   	speak.style('font-size', '75px');
 	speak.style('font-family', 'Arial Rounded MT Bold, Arial, sans-serif');
@@ -192,11 +178,39 @@ function setup()
 
 	speak.mouseReleased(() => {
 		myRec.stop(); //starts recording
-		check();
+	});
+
+	List = createButton("...");
+	List.style('background-color', '#7b1f7bff'); // tomato color
+  	List.style('color', 'white');
+ 	List.style('border', '4px solid #370f38ff');
+  	List.style('border-radius', '100px');
+  	List.style('font-size', '30px');
+	List.style('font-family', 'Arial Rounded MT Bold, Arial, sans-serif');
+ 	List.style('color', '#e18fe3ff');
+	List.position(buttonx3,buttony3);
+	List.size(buttonwidth2,buttonheight2);
+
+	List.mousePressed(() => {
+		
+		if (!hintscreen)
+		{
+			react.attribute('disabled', '');  
+			speak.attribute('disabled', '');
+			hintscreen = true;
+		}
+		else if (hintscreen)
+		{
+			react.removeAttribute('disabled', '');  
+			speak.removeAttribute('disabled', '');
+			hintscreen = false;
+		}
 	});
 
 	//creates list of videos
 	reactions = [jumpfoxy, iam, apr, ays, bm, doom, mcw, misinput, znoise, whistle, windows8, bluenew, blueold, loading, longhorn, when, absolute,sta];
+
+	found = [];
 
 	//goes through all videos, hides them for now
 	for (let i = 0; i < reactions.length; i++) {
@@ -205,14 +219,62 @@ function setup()
 	}
 }
 
-//funct for speech recognition
-function gotSpeech() {
-	if (myRec.resultValue) {
-		resultText = myRec.resultString;
-		console.log("Heard:", resultText);
-	}
+// ==============================================
+//         RESIZE - resizes when window is changed
+// ==============================================
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
 
+function drawUI()
+{
+	if (hintscreen)
+	{
+		push();
+		fill(191, 103, 204);
+		stroke('#370f38ff');
+		strokeWeight(4); 
+		rect(325, 50, 615, 450, 40);
+		pop();
+
+		textSize(40);
+		fill('white');
+		text('Find all the memes! Hints:', 412, 100);
+		textSize(25);
+		fill('#fedeffff');
+		if (found.includes(0)) text('✔', 370, 135);
+		text('▢ A type of scare in a video game', 370, 135);
+		if (found.includes(1)) text('✔', 370, 160);
+		text('▢ invincible ', 370, 160);
+		if (found.includes(2)) text('✔', 370, 185);
+		text('▢ an obsessive roblox game ', 370, 185);
+		if (found.includes(3)) text('✔', 370, 210);
+		text('▢ guess who\'s finally getting his powers! ', 370, 210);
+		if (found.includes(4)) text('✔', 370, 235);
+		text('▢ a battle royale game ', 370, 235);
+		if (found.includes(5)) text('✔', 370, 260);
+		text('▢ can it run...', 370, 260);
+		if (found.includes(6)) text('✔', 370, 285);
+		text('▢ a game made out of blocks', 370, 285);
+		if (found.includes(7)) text('✔', 370, 310);
+		text('▢ CALM DOWN! IT WAS A... ', 370, 310);
+		if (found.includes(8)) text('✔', 370, 335);
+		text('▢ a call of duty game mode', 370, 335);
+		if (found.includes(9)) text('✔', 370, 360);
+		text('▢ a guy who whistles ', 370, 360);
+		if (found.includes(10)) text('✔', 370, 385);
+		text('▢ an operating system (/5),', 370, 385);
+		if (found.includes(15)) text('✔', 370, 410);
+		text('▢ a frustrating computer activity', 370, 410);
+		if (found.includes(16)) text('✔', 370, 435);
+		text('▢ martin scorsese meme', 370, 435);
+		if (found.includes(17)) text('✔', 370, 460);
+		text('▢ that was fantastic!', 370, 460);
+	}
+}
+// ==============================================
+//                               DRAW
+// ==============================================
 function draw()
 {
 
@@ -229,6 +291,8 @@ function draw()
 		if (reset) //uses reset flag
 		{
 			react.removeAttribute('disabled', '');  //allows button use
+			speak.removeAttribute('disabled', '');
+			List.removeAttribute('disabled', '');
 			reactions[RandReact].hide(); //rehides video
 			State = "close" //sets animation state
 			CloseAnim.frame = 0; //sets Animation Start frame
@@ -254,19 +318,40 @@ function draw()
 			drawClose();
 		}
 
+		drawUI();
 }
 
+
+// ==============================================
+//                         SPEECH SETUP
+// ==============================================
+function gotSpeech() {
+	if (myRec.resultValue) {
+		resultText = myRec.resultString;
+		resultText = resultText.toLowerCase();
+		console.log("Heard:", resultText);
+		check();
+	}
+}
+
+// ==============================================
+//                              REACTION TRIGGER
+//    - logic used to trigger a given animation to play.
+// ==============================================
 function reactiontrigger()
 {
 		State = "open" //sets state to open
 		myRec.stop(); //stops recording speech until after play (allows senetence to reset between reactions to avoid repeating)
-		resultText = ""; //resets result text
+		resultText = "";
+		prevText = "";
 		firstuse = false; //sets first use to false. only needed once. 
 		OpenAnim.frame = 0; //sets open anim frame to beginning
 		OpenAnim.play(); //starts open anim
 		reset = true; //sets reset flag
 
 		react.attribute('disabled', ''); //dissables button use
+		speak.attribute('disabled', '');
+		List.attribute('disabled', '');
 		console.log("Reaction " + RandReact); //prints current reaction to console for debugging
 
 		reactions[RandReact].position(videox,videoy); //sets vid position
@@ -280,122 +365,173 @@ function reactiontrigger()
 		}, 600);
 }
 
+// ==============================================
+//      CHECK - After speaking, checks if any trigger 
+// 			           words were included
+// ==============================================
 function check()
 {
-		if (!whentriggered) //only if reaction hasnt already been triggered.
-		{
-		
-		// runs through all of the possible words/trigger phrases for each reaction
-			console.log("test")
-		resultText = resultText.toLowerCase();
-		//absolute
-		if (resultText.includes("absolute") || resultText.includes("cinema"))
-		{
-			RandReact = 16;
-			reactiontrigger()
+	
+	// runs through all of the possible words/trigger phrases for each reaction
 
-		}
-		//apr
-		else if (resultText.includes("pressure") || resultText.includes("sky") || resultText.includes("pressured"))
+	//absolute
+	if (resultText.includes("absolute") || resultText.includes("cinema"))
+	{
+		RandReact = 16;
+		found.push(16);
+		reactiontrigger()
+
+	}
+	//apr
+	else if (resultText.includes("pressure") || resultText.includes("sky") || resultText.includes("pressured"))
+	{
+		RandReact = 2;
+		found.push(2);
+		reactiontrigger()
+	}
+	//ays
+	else if (resultText.includes("are you sure") || resultText.includes("sure"))
+	{
+		RandReact = 3;
+		found.push(3);
+		reactiontrigger()
+	}
+	//bluenew / blueold / loading / longhorn / windows8
+	else if (resultText.includes("error") || resultText.includes("bluescreen") || resultText.includes("windows") || resultText.includes("process"))
+	{
+		RandReact = int(random(0, 5));
+		console.log(RandReact);
+		if (RandReact == 0)
 		{
-			RandReact = 2;
-			reactiontrigger()
+			RandReact = 10;
 		}
-		//ays
-		else if (resultText.includes("are you sure") || resultText.includes("sure"))
+		else if (RandReact == 1)
 		{
-			RandReact = 3;
-			reactiontrigger()
+			RandReact = 11;
 		}
-		//bluenew / blueold / loading / longhorn / windows8
-		else if (resultText.includes("error") || resultText.includes("bluescreen") || resultText.includes("windows") || resultText.includes("process"))
+		else if (RandReact == 2)
 		{
-			RandReact = int(random(0, 5));
-			console.log(RandReact);
-			if (RandReact == 0)
-			{
-				RandReact = 11;
-			}
-			else if (RandReact == 1)
-			{
-				RandReact = 12;
-			}
-			else if (RandReact == 2)
-			{
-				RandReact = 13;
-			}
-			else if (RandReact == 3)
-			{
-				RandReact = 14;
-			}
-			else if (RandReact == 4)
-			{
-				RandReact = 11;
-			}
+			RandReact = 12;
 		}
-		//bm
-		else if (resultText.includes("fortnite") || resultText.includes("fortnight") || resultText.includes("fort night"))
+		else if (RandReact == 3)
 		{
-			RandReact = 4;
-			reactiontrigger()
+			RandReact = 13;
 		}
-		//doom
-		else if (resultText.includes("doom") || resultText.includes("run"))
+		else if (RandReact == 4)
 		{
-			RandReact = 5;
-			reactiontrigger()
+			RandReact = 14;
 		}
-		//iam
-		else if (resultText.includes("i am") || resultText.includes("i'm"))
+		found.push(11,12,13,14,10);
+		reactiontrigger()
+
+	}
+	//bm
+	else if (resultText.includes("fortnite") || resultText.includes("fortnight") || resultText.includes("fort night"))
+	{
+		RandReact = 4;
+		found.push(4);
+		reactiontrigger()
+	}
+	//doom
+	else if (resultText.includes("doom") || resultText.includes("run"))
+	{
+		RandReact = 5;
+		found.push(5);
+		reactiontrigger()
+	}
+	//iam
+	else if (resultText.includes("i am") || resultText.includes("i'm"))
+	{
+		console.log("ran")
+		RandReact = 1;
+		found.push(1);
+		reactiontrigger()
+	}
+	//jumpfoxy / whistle
+	else if (resultText.includes("jump scare") || resultText.includes("freddy") || resultText.includes("five bear") || resultText.includes("five nights") || resultText.includes("josh") || resultText.includes("whistle"))
+	{
+		RandReact = int(random(0, 2));
+		console.log(RandReact);
+		if (RandReact == 0)
 		{
-			console.log("ran")
-			RandReact = 1;
-			reactiontrigger()
+			RandReact = 0;
 		}
-		//jumpfoxy / whistle
-		else if (resultText.includes("jump scare") || resultText.includes("freddy") || resultText.includes("five bear") || resultText.includes("five nights") || resultText.includes("josh") || resultText.includes("whistle"))
+		else if (RandReact == 1)
 		{
-			RandReact = int(random(0, 2));
-			console.log(RandReact);
-			if (RandReact == 0)
-			{
-				RandReact = 0;
-			}
-			else if (RandReact == 1)
-			{
-				RandReact = 9;
-			}
-			reactiontrigger()
+			RandReact = 9;
 		}
-		//mc world
-		else if (resultText.includes("create") || resultText.includes("mine") || resultText.includes("craft") || resultText.includes("water bucket"))
-		{
-			RandReact = 6;
-			reactiontrigger()
-		}
-		//misinput
-		else if (resultText.includes("misinput") || resultText.includes("miss input") || resultText.includes("calm"))
-		{
-			RandReact = 7;
-			reactiontrigger()
-		}
-		//when
-		else if (resultText.includes("when") || resultText.includes("programming") || resultText.includes("code") || resultText.includes("coding"))
-		{
-			RandReact = 15;
-			reactiontrigger()
-		}
-		//znoises
-		else if (resultText.includes("sam") || resultText.includes("zombies") || resultText.includes("dogging"))
-		{
-			RandReact = 8;
-			reactiontrigger()
-		}
-		//say that again
-		else if (resultText.includes("fantastic") || resultText.includes("thing") || resultText.includes("four") || resultText.includes("say that again"))
-		{
-			RandReact =17;
-			reactiontrigger()
-		}
-		}
+		found.push(0,9);
+		reactiontrigger()
+	}
+	//mc world
+	else if (resultText.includes("create") || resultText.includes("mine") || resultText.includes("craft") || resultText.includes("water bucket"))
+	{
+		RandReact = 6;
+		found.push(6);
+		reactiontrigger()
+	}
+	//misinput
+	else if (resultText.includes("misinput") || resultText.includes("miss input") || resultText.includes("calm"))
+	{
+		RandReact = 7;
+		found.push(7);
+		reactiontrigger()
+	}
+	//when
+	else if (resultText.includes("when") || resultText.includes("programming") || resultText.includes("code") || resultText.includes("coding"))
+	{
+		RandReact = 15;
+		found.push(15);
+		reactiontrigger()
+	}
+	//znoises
+	else if (resultText.includes("sam") || resultText.includes("zombies") || resultText.includes("dogging"))
+	{
+		RandReact = 8;
+		found.push(8);
+		reactiontrigger()
+	}
+	//say that again
+	else if (resultText.includes("fantastic") || resultText.includes("thing") || resultText.includes("four") || resultText.includes("say that again"))
+	{
+		RandReact =17;
+		found.push(17);
+		reactiontrigger()
+	}
+}
+
+// ==============================================
+//                              ANIMATIONS
+//    		       positions and draws animations.
+// ==============================================
+
+//draws Idle Animation
+function drawIdle() {
+	push();
+	translate(laptopx, laptopy);
+	scale(0.3);
+	animation(IdleAnim, laptopwidth, laptopheight);
+	pop();
+}
+
+//draws Open Animation
+function drawOpen() {
+	push();
+	translate(laptopx, laptopy);
+	scale(0.3);
+	animation(OpenAnim, laptopwidth, laptopheight);
+	pop();
+	OpenAnim.noLoop();
+
+
+}
+
+//draws Close Animation
+function drawClose() {
+	push();
+	translate(laptopx, laptopy);
+	scale(0.3);
+	animation(CloseAnim, laptopwidth, laptopheight);
+	pop();
+	CloseAnim.noLoop();
 }
