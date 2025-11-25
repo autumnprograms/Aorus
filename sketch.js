@@ -12,7 +12,9 @@ videowidth =500;
 
 //button reactions dimensions and position
 buttonx = 100;
-buttony = 175;
+buttony = 115;
+buttonx2 = 100;
+buttony2 = 275;
 buttonheight =150;
 buttonwidth =150;
 
@@ -150,7 +152,6 @@ function setup()
 	// Starts continuous listening
 	myRec.continuous = true; 
 	myRec.interimResults = false; //no final results, removes repeating issues
-	myRec.start(); //starts recording
 
 	//animation frame padding 
 	IdleAnim.frameDelay = 15;
@@ -172,6 +173,26 @@ function setup()
 	react.mousePressed(() => {
 		RandReact = int(random(0, 19));
 		reactiontrigger();
+	});
+	
+		speak = createButton("!");
+	speak.style('background-color', '#7b1f7bff'); // tomato color
+  	speak.style('color', 'white');
+ 	 speak.style('border', '4px solid #370f38ff');
+  	speak.style('border-radius', '100px');
+  	speak.style('font-size', '75px');
+	speak.style('font-family', 'Arial Rounded MT Bold, Arial, sans-serif');
+ 	speak.style('color', '#e18fe3ff');
+	speak.position(buttonx2,buttony2);
+	speak.size(buttonwidth,buttonheight);
+
+	speak.mousePressed(() => {
+		myRec.start(); //starts recording
+	});
+
+	speak.mouseReleased(() => {
+		myRec.stop(); //starts recording
+		check();
 	});
 
 	//creates list of videos
@@ -213,18 +234,59 @@ function draw()
 			CloseAnim.frame = 0; //sets Animation Start frame
 			CloseAnim.play(); //unpauses anim (had issues before w/o this)
 			reset = false; //resets reset flag
-			myRec.start(); //starts checking for words again
 		}
 		else if (!CloseAnim.playing) //sets back to idle after close
 		{
 			State = "idle";
 		}
+		}
 
+		if (State == "idle")
+		{
+			drawIdle();
+		}
+		else if (State == "open")
+		{
+			drawOpen();
+		}
+		else if (State == "close")
+		{
+			drawClose();
+		}
+
+}
+
+function reactiontrigger()
+{
+		State = "open" //sets state to open
+		myRec.stop(); //stops recording speech until after play (allows senetence to reset between reactions to avoid repeating)
+		resultText = ""; //resets result text
+		firstuse = false; //sets first use to false. only needed once. 
+		OpenAnim.frame = 0; //sets open anim frame to beginning
+		OpenAnim.play(); //starts open anim
+		reset = true; //sets reset flag
+
+		react.attribute('disabled', ''); //dissables button use
+		console.log("Reaction " + RandReact); //prints current reaction to console for debugging
+
+		reactions[RandReact].position(videox,videoy); //sets vid position
+		reactions[RandReact].size(videoheight,videowidth); //sets vid size
+
+		reactions[RandReact].time(0); //sets video back to beginning
+		//Only plays video when laptop has opened fully (~600)
+		setTimeout(() => {
+			reactions[RandReact].show();
+			reactions[RandReact].play();
+		}, 600);
+}
+
+function check()
+{
 		if (!whentriggered) //only if reaction hasnt already been triggered.
 		{
 		
 		// runs through all of the possible words/trigger phrases for each reaction
-
+			console.log("test")
 		resultText = resultText.toLowerCase();
 		//absolute
 		if (resultText.includes("absolute") || resultText.includes("cinema"))
@@ -234,7 +296,7 @@ function draw()
 
 		}
 		//apr
-		else if (resultText.includes("pressure") || resultText.includes("sky"))
+		else if (resultText.includes("pressure") || resultText.includes("sky") || resultText.includes("pressured"))
 		{
 			RandReact = 2;
 			reactiontrigger()
@@ -335,49 +397,5 @@ function draw()
 			RandReact =17;
 			reactiontrigger()
 		}
-		if (millis() - lastChangeTime > silenceDelay && resultText !== "") {
-		console.log("2 seconds of silence — resetting sentence");
-		RandReact = int(random(0, 18));
-		reactiontrigger()
 		}
-		}
-		}
-
-		if (State == "idle")
-		{
-			drawIdle();
-		}
-		else if (State == "open")
-		{
-			drawOpen();
-		}
-		else if (State == "close")
-		{
-			drawClose();
-		}
-
-}
-
-function reactiontrigger()
-{
-		State = "open" //sets state to open
-		myRec.stop(); //stops recording speech until after play (allows senetence to reset between reactions to avoid repeating)
-		resultText = ""; //resets result text
-		firstuse = false; //sets first use to false. only needed once. 
-		OpenAnim.frame = 0; //sets open anim frame to beginning
-		OpenAnim.play(); //starts open anim
-		reset = true; //sets reset flag
-
-		react.attribute('disabled', ''); //dissables button use
-		console.log("Reaction " + RandReact); //prints current reaction to console for debugging
-
-		reactions[RandReact].position(videox,videoy); //sets vid position
-		reactions[RandReact].size(videoheight,videowidth); //sets vid size
-
-		reactions[RandReact].time(0); //sets video back to beginning
-		//Only plays video when laptop has opened fully (~600)
-		setTimeout(() => {
-			reactions[RandReact].show();
-			reactions[RandReact].play();
-		}, 600);
 }
