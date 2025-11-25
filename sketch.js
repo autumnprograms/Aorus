@@ -48,6 +48,7 @@ reset = false; //used as flag for if reset has taken place
 firstuse = true; //used to allow first use, avoids repeating reactions in loop
 RandReact = 0; //used in some reaction cases to choose a random reaction
 hintscreen = false;
+directionscreen = true;
 
 //establishing needed vars for voice rec
 let myRec; //recognition var
@@ -207,6 +208,24 @@ function setup()
 		}
 	});
 
+	directions = createButton('>Click To Continue>')
+	directions.style('background-color', '#7b1f7bff'); // tomato color
+  	directions.style('color', 'white');
+ 	directions.style('border', '4px solid #370f38ff');
+  	directions.style('border-radius', '100px');
+  	directions.style('font-size', '30px');
+	directions.style('font-family', 'Arial Rounded MT Bold, Arial, sans-serif');
+ 	directions.style('color', '#e18fe3ff');
+	directions.position(630,450);
+	directions.size(300,50);
+		
+	directions.mousePressed(() => {
+		react.removeAttribute('disabled', '');  //allows button use
+		speak.removeAttribute('disabled', '');
+		List.removeAttribute('disabled', '');
+		directionscreen = false
+		directions.hide();
+	});
 	//creates list of videos
 	reactions = [jumpfoxy, iam, apr, ays, bm, doom, mcw, misinput, znoise, whistle, windows8, bluenew, blueold, loading, longhorn, when, absolute,sta];
 
@@ -215,8 +234,12 @@ function setup()
 	//goes through all videos, hides them for now
 	for (let i = 0; i < reactions.length; i++) {
 	reactions[i].hide();
-	enableMicTap('Tap to enable motion sensors');
+	enableMicTap("Enable Microphone")
 	}
+
+	react.attribute('disabled', '');  //allows button use
+	speak.attribute('disabled', '');
+	List.attribute('disabled', '');
 }
 
 // ==============================================
@@ -228,6 +251,23 @@ function windowResized() {
 
 function drawUI()
 {
+	if (directionscreen)
+	{
+		push();
+		fill(191, 103, 204);
+		stroke('#370f38ff');
+		strokeWeight(4); 
+		rect(325, 50, 615, 450, 40);
+		pop();
+		textSize(30);
+		text('- "?", hint: play a video, and you  \n to think of the keyword',370, 125);
+		text('- "🎤︎", speak to Aorus! hold, say keywords \n to try and find memes he knows',370, 250);
+		text('- "...", List: check which memes youve \n found! try to find them all!',370, 390);
+		push();
+		textStyle(BOLD);;
+		pop();
+	}
+
 	if (hintscreen)
 	{
 		push();
