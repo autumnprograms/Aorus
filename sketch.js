@@ -49,6 +49,7 @@ firstuse = true; //used to allow first use, avoids repeating reactions in loop
 RandReact = 0; //used in some reaction cases to choose a random reaction
 hintscreen = false;
 directionscreen = true;
+listening = false;
 
 //establishing needed vars for voice rec
 let myRec; //recognition var
@@ -174,11 +175,18 @@ function setup()
 	speak.size(buttonwidth,buttonheight);
 
 	speak.mousePressed(() => {
+		if (!listening)
+		{
 		myRec.start(); //starts recording
-	});
-
-	speak.mouseReleased(() => {
+		listening = true;
+		console.log("listening");
+		}
+		else
+		{
 		myRec.stop(); //starts recording
+		listening = false;
+		console.log("listened");
+		}
 	});
 
 	List = createButton("...");
@@ -380,6 +388,11 @@ function gotSpeech() {
 // ==============================================
 function reactiontrigger()
 {
+		if (listening);
+		{
+			listening = false;
+		}
+		listening = false
 		State = "open" //sets state to open
 		myRec.stop(); //stops recording speech until after play (allows senetence to reset between reactions to avoid repeating)
 		resultText = "";
