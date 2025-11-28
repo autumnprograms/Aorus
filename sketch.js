@@ -138,7 +138,7 @@ function setup()
 
 	// Starts continuous listening
 	myRec.continuous = true; 
-	myRec.interimResults = false; //no final results, removes repeating issues
+	myRec.interimResults = true; //no final results, removes repeating issues
 
 	//animation frame padding 
 	IdleAnim.frameDelay = 15;
